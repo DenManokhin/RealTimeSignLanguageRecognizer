@@ -1,0 +1,7 @@
+;;directories to ignore
+.idea/
+__pycache__/
+
+;;extensions to ignore
+.log
+.pyc
