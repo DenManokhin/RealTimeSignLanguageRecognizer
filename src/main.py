@@ -30,11 +30,17 @@ class_map = {
 }
 
 
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture("http://192.168.0.101:8080/videofeed")
+# initialize timer for fps counter
+counter = 0
+start = time()
 while cap.isOpened():
+
+    if counter > 255:
+        counter = 0
+        start = time()
+
     ret, frame = cap.read()
-    # initialize timer for fps counter
-    start = time()
     if ret:
 
         # preprocess image
@@ -74,8 +80,8 @@ while cap.isOpened():
             mask = np.zeros((h, w))
 
         # fps counter
-        end = time()
-        fps = 1 / (end - start)
+        counter += 1
+        fps = counter / (time() - start)
         cv.putText(frame_resized, "FPS: " + str(int(fps)), (20, 455), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
         # display frame
