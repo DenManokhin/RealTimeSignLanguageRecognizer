@@ -8,7 +8,7 @@ from model import CNN
 
 # load model parameters and copy it to GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = torch.load("../weights.pth", map_location=device).to(device, torch.float)
+model = torch.load("../weights_aug.pth", map_location=device).to(device, torch.float)
 
 
 calibrated = False
@@ -30,7 +30,7 @@ class_map = {
 }
 
 
-cap = cv.VideoCapture("http://192.168.0.101:8080/videofeed")
+cap = cv.VideoCapture(0)
 # initialize timer for fps counter
 counter = 0
 start = time()
