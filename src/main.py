@@ -8,7 +8,7 @@ from model import CNN
 
 # load model parameters and copy it to GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = torch.load("../model_color_8.pth", map_location=device).to(device, torch.float)
+model = torch.load("../model_mnist_augmented.pth", map_location=device).to(device, torch.float)
 
 
 calibrated = False
@@ -39,18 +39,18 @@ while cap.isOpened():
 
         # preprocess image
         frame_resized = cv.resize(frame, window_size)
-        frame_blur = cv.GaussianBlur(frame_resized, (5, 5), 0)
+        # frame_blur = cv.GaussianBlur(frame_resized, (5, 5), 0)
 
         if calibrated:
 
             # select hand roi and convert to grayscale
-            hand_roi = frame_blur[y:y + h, x:x + w].copy()
+            hand_roi = frame_resized[y:y + h, x:x + w].copy()
             hand_roi_gray = cv.cvtColor(hand_roi, cv.COLOR_BGR2GRAY)
 
             # make prediction on gesture
             pred = predict(model, hand_roi_gray, device)
-            char = class_map[pred.item()]
-            cv.putText(frame_resized, "Char: " + char, (20, 430), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+            # char = class_map[pred.item()]
+            cv.putText(frame_resized, "Char: " + str(pred), (20, 430), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
         else:
 
