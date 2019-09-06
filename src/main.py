@@ -21,6 +21,7 @@ model = torch.load(weights, map_location=device).to(device, torch.float)
 
 
 calibrated = False
+tracker = cv.TrackerKCF_create()
 window_size = (640, 480)
 # initial hand roi coordinates
 x, y, w, h = (50, 50, 250, 250)
@@ -58,22 +59,35 @@ while cap.isOpened():
 
         if calibrated:
 
-            # select hand roi and apply mask by skin color
-            hand_roi = frame_blur[y:y + h, x:x + w].copy()
-            roi_ycrcb = cv.cvtColor(hand_roi, cv.COLOR_BGR2YCrCb)
-            lower = np.array([60, max(0, cr - cr_diff), max(0, cb - cb_diff)], dtype="uint8")
-            upper = np.array([255, min(255, cr + cr_diff), min(255, cb + cb_diff)], dtype="uint8")
-            mask = cv.inRange(roi_ycrcb, lower, upper)
+            # update hand tracker
+            success, box = tracker.update(frame_blur)
+            if success:
+                # if any exception occurs repeat calibration
+                try:
+                    x, y, w, h = [int(v) for v in box]
+                    cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-            # apply morphology operations to improve mask quality
-            kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
-            mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel)
-            mask = cv.dilate(mask, kernel)
+                    # select hand roi and apply mask by skin color
+                    hand_roi = frame_blur[y:y + h, x:x + w].copy()
+                    roi_ycrcb = cv.cvtColor(hand_roi, cv.COLOR_BGR2YCrCb)
+                    lower = np.array([60, max(0, cr - cr_diff), max(0, cb - cb_diff)], dtype="uint8")
+                    upper = np.array([255, min(255, cr + cr_diff), min(255, cb + cb_diff)], dtype="uint8")
+                    mask = cv.inRange(roi_ycrcb, lower, upper)
 
-            # make prediction on gesture
-            pred = predict(model, mask, device)
-            char = class_map[pred.item()]
-            cv.putText(frame_resized, "Char: " + char, (20, 430), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                    # apply morphology operations to improve mask quality
+                    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (7, 7))
+                    mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel)
+                    mask = cv.dilate(mask, kernel)
+
+                    # make prediction on gesture
+                    pred = predict(model, mask, device)
+                    char = class_map[pred.item()]
+                    cv.putText(frame_resized, "Char: " + char, (20, 430), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                except:
+                    calibrated = False
+                    x, y, w, h = (50, 50, 250, 250)
+            else:
+                calibrated = False
 
         else:
 
@@ -82,9 +96,13 @@ while cap.isOpened():
                 hand_roi = frame_blur[y:y + h, x:x + w].copy()
                 roi_ycrcb = cv.cvtColor(hand_roi, cv.COLOR_BGR2YCrCb)
                 _, cr, cb = roi_ycrcb[h // 2, w // 2, :]
+                # initialize hand tracker
+                tracker.init(frame_blur, (x, y, w, h))
                 calibrated = True
 
             # mark hint where to place a hand
+            message = """Please place your hand inside the green box and press Space"""
+            cv.putText(frame_resized, message, (x, y - 20), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
             cv.circle(frame_resized, (x + w // 2, y + h // 2), 3, (0, 255, 0), 3)
             mask = np.zeros((h, w))
 
