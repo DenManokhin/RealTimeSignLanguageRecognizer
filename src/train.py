@@ -63,10 +63,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch", type=int, help="Batch size used for training", default=256)
     parser.add_argument("--workers", type=int, help="Number of workers used for loading data", default=0)
+    parser.add_argument("--epochs", type=int, help="Training epochs count", default=50)
+    parser.add_argument("--out", type=str, help="Output name", default="model.pth")
     args = vars(parser.parse_args())
 
     batch_size = args["batch"]
     num_workers = args["workers"]
+    epochs = args["epochs"]
+    out = args["out"]
 
     trainset = GesturesDataset("../data/train.csv")
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
@@ -81,4 +85,5 @@ if __name__ == "__main__":
 
     criterion = nn.CrossEntropyLoss()
 
-    losses, accuracies = train(model, trainloader, criterion, optimizer, 5, device, testloader=testloader)
+    losses, accuracies = train(model, trainloader, criterion, optimizer, epochs, device, testloader=testloader)
+    torch.save(model, out)

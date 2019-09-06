@@ -1,14 +1,23 @@
 import torch
 import cv2 as cv
 import numpy as np
+import argparse
 from time import time
 from pred import predict
 from model import CNN
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--weights", type=str, help="Path to file with model weights", default="../weights.pth")
+parser.add_argument("--video", type=str, help="Device used for video capture", default=0)
+args = vars(parser.parse_args())
+
+weights = args["weights"]
+video_device = args["video"]
+
 # load model parameters and copy it to GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = torch.load("../weights_aug.pth", map_location=device).to(device, torch.float)
+model = torch.load(weights, map_location=device).to(device, torch.float)
 
 
 calibrated = False
@@ -30,7 +39,7 @@ class_map = {
 }
 
 
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(video_device)
 # initialize timer for fps counter
 counter = 0
 start = time()
