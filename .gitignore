@@ -1,6 +1,7 @@
 ;;directories to ignore
 .idea/
 __pycache__/
+venv/
 
 ;;extensions to ignore
 .log
